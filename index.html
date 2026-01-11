@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NOVA | INTRO</title>
+    <style>
+        /* إعدادات الشاشة السوداء */
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* حاوية الـ GIF */
+        .intro-wrapper {
+            width: 90%;
+            max-width: 500px;
+            animation: fadeIn 1.5s ease-in-out forwards;
+        }
+
+        .intro-gif {
+            width: 100%;
+            height: auto;
+            /* توهج خفيف حول الـ GIF ليعطي طابعاً فخماً */
+            filter: drop-shadow(0 0 20px rgba(138, 43, 226, 0.3));
+        }
+
+        /* أنيميشن الظهور التدريجي */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        /* طبقة الانفجار الأبيض عند الانتقال */
+        .flash-overlay {
+            position: fixed;
+            inset: 0;
+            background: #fff;
+            z-index: 9999;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .animate-flash {
+            animation: flashAction 0.8s ease-out forwards;
+        }
+
+        @keyframes flashAction {
+            0% { opacity: 0; }
+            50% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="intro-wrapper">
+        <img src="img/intro.gif" alt="Intro" class="intro-gif">
+    </div>
+
+    <div class="flash-overlay" id="flash"></div>
+
+    <script>
+        // التوقيت: 6 ثواني (6000 ميلي ثانية)
+        const displayTime = 6000; 
+
+        setTimeout(() => {
+            const flash = document.getElementById('flash');
+            
+            // بدء تأثير الوميض (الانفجار الأبيض)
+            flash.classList.add('animate-flash');
+
+            // الانتقال إلى صفحة nova بعد منتصف الانفجار مباشرة
+            setTimeout(() => {
+                window.location.href = "nova.html";
+            }, 400); // ينتقل بعد 0.4 ثانية من بدء الانفجار ليصبح التأثير واقعياً
+
+        }, displayTime);
+    </script>
+</body>
+</html>
