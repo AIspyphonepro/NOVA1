@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>NOVA · الحساب اليومي</title>
+    <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@400;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --accent: #3b82f6;
+            --dark: #0f172a;
+            --bg: #f8fafc;
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Almarai', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg); color: var(--dark); padding: 20px 16px 120px; }
+
+        /* Header */
+        .top-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; }
+        .top-nav h1 { font-size: 20px; font-weight: 800; }
+        .status-badge { background: #ecfdf5; color: var(--success); padding: 6px 12px; border-radius: 20px; font-size: 10px; font-weight: 800; }
+
+        /* Mega Card (Real-time Preview) */
+        .mega-card {
+            background: var(--dark); border-radius: 32px; padding: 30px; color: white;
+            text-align: center; margin-bottom: 25px; position: relative;
+            background-image: radial-gradient(circle at top right, #1e293b, #0f172a);
+            box-shadow: 0 20px 40px rgba(15, 23, 42, 0.2);
+        }
+        .mega-card .label { font-size: 12px; opacity: 0.6; display: block; margin-bottom: 8px; }
+        .mega-card .val { font-size: 38px; font-weight: 800; color: var(--success); letter-spacing: -1px; }
+
+        /* Form Styling */
+        .form-container { background: white; border-radius: 28px; padding: 25px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); }
+        .input-group { margin-bottom: 20px; }
+        .input-group label { display: block; font-size: 12px; font-weight: 800; color: #64748b; margin-bottom: 8px; }
+        .input-group label i { color: var(--accent); margin-left: 5px; }
+        
+        input {
+            width: 100%; padding: 16px; border-radius: 16px; border: 2px solid #f1f5f9;
+            background: #f8fafc; font-size: 16px; font-weight: 700; color: var(--dark);
+            transition: 0.3s;
+        }
+        input:focus { border-color: var(--accent); background: white; outline: none; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+
+        /* Dynamic Expenses */
+        .expense-row { display: flex; gap: 10px; margin-bottom: 10px; animation: slideIn 0.3s ease; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .remove-btn { 
+            background: #fee2e2; color: var(--danger); border: none; 
+            width: 55px; border-radius: 14px; cursor: pointer;
+        }
+
+        .add-btn {
+            width: 100%; padding: 14px; border-radius: 16px; border: 2px dashed #e2e8f0;
+            background: transparent; color: #64748b; font-weight: 800; font-size: 13px;
+            margin-bottom: 25px; cursor: pointer;
+        }
+
+        .submit-btn {
+            background: var(--dark); color: white; border: none; width: 100%;
+            padding: 20px; border-radius: 20px; font-size: 16px; font-weight: 800;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            box-shadow: 0 10px 20px rgba(15, 23, 42, 0.15);
+        }
+        .submit-btn:active { transform: scale(0.98); }
+
+        /* Nav Dock */
+        .nav-dock { position: fixed; bottom: 20px; left: 20px; right: 20px; background: var(--dark); border-radius: 28px; padding: 15px; display: flex; justify-content: space-around; z-index: 1000; }
+        .nav-link { color: #475569; text-decoration: none; font-size: 22px; }
+        .nav-link.active { color: white; }
+    </style>
+</head>
+<body>
+
+    <div class="top-nav">
+        <h1>إدخال البيانات اليومية</h1>
+        <div class="status-badge">نظام نوفا النشط</div>
+    </div>
+
+    <div class="mega-card">
+        <span class="label">صافي الربح اللحظي</span>
+        <div id="netPreview" class="val">0 دج</div>
+    </div>
+
+    <div class="form-container">
+        <form id="adsForm">
+            <div class="input-group">
+                <label><i class="far fa-calendar-check"></i> تاريخ اليوم</label>
+                <input type="date" id="dateInput" required>
+            </div>
+
+            <div class="input-group">
+                <label><i class="fas fa-cash-register"></i> إجمالي المبيعات المحصلة (دج)</label>
+                <input type="number" id="totalSales" placeholder="0.00" step="0.01" required>
+            </div>
+
+            <div class="grid-2">
+                <div class="input-group">
+                    <label><i class="fas fa-chart-line"></i> سعر الصرف</label>
+                    <input type="number" id="dollarRate" value="260">
+                </div>
+                <div class="input-group">
+                    <label><i class="fab fa-facebook-f"></i> إعلانات FB (دج)</label>
+                    <input type="number" id="fbExpense" value="0">
+                </div>
+            </div>
+
+            <label style="display:block; font-size:12px; font-weight:800; color:#64748b; margin-bottom:8px;">
+                <i class="fas fa-tags" style="color:var(--accent)"></i> مصاريف الخدمات ($)
+            </label>
+            <div id="expensesContainer">
+                <div class="expense-row">
+                    <input type="number" class="expense-usd" placeholder="المبلغ بالدولار $" step="0.01">
+                    <button type="button" class="remove-btn" onclick="removeRow(this)"><i class="fas fa-times"></i></button>
+                </div>
+            </div>
+
+            <button type="button" class="add-btn" onclick="addRow()">
+                <i class="fas fa-plus-circle"></i> إضافة بند مصروفات جديد
+            </button>
+
+            <button type="submit" class="submit-btn">
+                <i class="fas fa-cloud-upload-alt"></i> ترحيل البيانات للديشبورد
+            </button>
+        </form>
+    </div>
+
+    <nav class="nav-dock">
+        <a href="dashboard.html" class="nav-link"><i class="fas fa-home"></i></a>
+        <a href="index.html" class="nav-link"><i class="fas fa-plus-circle"></i></a>
+        <a href="vu.html" class="nav-link"><i class="fas fa-users"></i></a>
+        <a href="ads.html" class="nav-link active"><i class="fas fa-coins"></i></a>
+        <a href="total.html" class="nav-link"><i class="fas fa-cog"></i></a>
+    </nav>
+
+    <script>
+        const KEY_DAILY = 'nova_daily';
+
+        // تنسيق العملة
+        function fmt(v) { return (v || 0).toLocaleString('ar-DZ') + ' دج'; }
+
+        // إضافة سطر مصاريف
+        window.addRow = function() {
+            const row = document.createElement('div');
+            row.className = 'expense-row';
+            row.innerHTML = `
+                <input type="number" class="expense-usd" placeholder="المبلغ بالدولار $" step="0.01">
+                <button type="button" class="remove-btn" onclick="removeRow(this)"><i class="fas fa-times"></i></button>
+            `;
+            document.getElementById('expensesContainer').appendChild(row);
+            listenInputs();
+        };
+
+        window.removeRow = function(btn) {
+            btn.parentElement.remove();
+            calculateNet();
+        };
+
+        // الحساب الفوري
+        function calculateNet() {
+            const sales = parseFloat(document.getElementById('totalSales').value) || 0;
+            const rate = parseFloat(document.getElementById('dollarRate').value) || 0;
+            const fb = parseFloat(document.getElementById('fbExpense').value) || 0;
+            
+            let totalUSD = 0;
+            document.querySelectorAll('.expense-usd').forEach(inp => {
+                totalUSD += parseFloat(inp.value) || 0;
+            });
+
+            const net = sales - (totalUSD * rate) - fb;
+            const preview = document.getElementById('netPreview');
+            preview.innerText = fmt(net);
+            preview.style.color = net >= 0 ? 'var(--success)' : 'var(--danger)';
+        }
+
+        function listenInputs() {
+            document.querySelectorAll('input').forEach(inp => {
+                inp.addEventListener('input', calculateNet);
+            });
+        }
+
+        // الحفظ والترحيل
+        document.getElementById('adsForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const sales = parseFloat(document.getElementById('totalSales').value) || 0;
+            const rate = parseFloat(document.getElementById('dollarRate').value) || 0;
+            const fb = parseFloat(document.getElementById('fbExpense').value) || 0;
+            let totalUSD = 0;
+            document.querySelectorAll('.expense-usd').forEach(inp => {
+                totalUSD += parseFloat(inp.value) || 0;
+            });
+
+            const net = sales - (totalUSD * rate) - fb;
+
+            const entry = {
+                id: Date.now(),
+                date: document.getElementById('dateInput').value,
+                totalSalesDZD: sales,
+                netProfitDZD: net,
+                totalExpensesDZD: (totalUSD * rate) + fb,
+                dollarRate: rate
+            };
+
+            const data = JSON.parse(localStorage.getItem(KEY_DAILY) || '[]');
+            data.push(entry);
+            localStorage.setItem(KEY_DAILY, JSON.stringify(data));
+
+            alert('تم ترحيل البيانات بنجاح إلى التقارير والديشبورد!');
+            window.location.href = 'dashboard.html';
+        });
+
+        // تشغيل ابتدائي
+        document.getElementById('dateInput').value = new Date().toISOString().slice(0, 10);
+        listenInputs();
+    </script>
+</body>
+</html>

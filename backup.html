@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NOVA · مركز الأمان</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@400;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --dark: #0f172a;
+            --primary: #3b82f6;
+            --success: #10b981;
+            --danger: #ef4444;
+            --bg: #f8fafc;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Almarai', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg); color: var(--dark); padding: 15px; padding-bottom: 110px; }
+
+        /* Header Premium */
+        .header {
+            background: var(--dark); border-radius: 30px; padding: 30px 25px; color: white;
+            text-align: center; margin-bottom: 25px; position: relative; overflow: hidden;
+            box-shadow: 0 15px 30px rgba(15, 23, 42, 0.2);
+        }
+        .header i.shield { font-size: 50px; color: var(--primary); margin-bottom: 15px; display: block; filter: drop-shadow(0 0 15px rgba(59, 130, 246, 0.5)); }
+        .header h1 { font-size: 22px; font-weight: 800; }
+        .header p { font-size: 12px; opacity: 0.6; margin-top: 5px; }
+
+        /* Status Card */
+        .status-card {
+            background: white; border-radius: 25px; padding: 20px;
+            display: flex; align-items: center; gap: 15px; margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.02); border: 1px solid #fff;
+        }
+        .status-icon { width: 45px; height: 45px; border-radius: 15px; background: #ecfdf5; color: var(--success); display: flex; align-items: center; justify-content: center; font-size: 20px; }
+
+        /* Control Buttons */
+        .backup-section { display: flex; flex-direction: column; gap: 15px; }
+        .btn {
+            width: 100%; padding: 20px; border-radius: 20px; border: none;
+            display: flex; align-items: center; justify-content: center; gap: 12px;
+            font-size: 15px; font-weight: 800; cursor: pointer; transition: 0.3s;
+        }
+        .btn-export { background: var(--dark); color: white; box-shadow: 0 10px 20px rgba(15, 23, 42, 0.1); }
+        .btn-import { background: white; color: var(--dark); border: 2px solid #e2e8f0; }
+        .btn-danger { background: #fee2e2; color: var(--danger); margin-top: 20px; }
+        
+        .btn:active { transform: scale(0.96); opacity: 0.9; }
+
+        /* Hidden File Input */
+        #fileInput { display: none; }
+
+        /* Nav Dock */
+        .nav-dock { 
+            position: fixed; bottom: 20px; left: 20px; right: 20px; 
+            background: var(--dark); border-radius: 28px; padding: 15px; 
+            display: flex; justify-content: space-around; z-index: 1000;
+        }
+        .nav-link { color: #475569; text-decoration: none; font-size: 22px; }
+        .nav-link.active { color: #fff; }
+
+        /* Toast Message */
+        #toast {
+            position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.9); color: white; padding: 12px 25px;
+            border-radius: 50px; font-size: 13px; font-weight: 700; opacity: 0; transition: 0.4s;
+            z-index: 9999; pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="toast">تمت العملية بنجاح!</div>
+
+    <div class="header">
+        <i class="fas fa-user-shield shield"></i>
+        <h1>مركز حماية البيانات</h1>
+        <p>قم بتأمين بياناتك ونقلها بسهولة</p>
+    </div>
+
+    <div class="status-card">
+        <div class="status-icon"><i class="fas fa-database"></i></div>
+        <div>
+            <span style="font-size: 11px; color: #64748b; font-weight: 800;">سجلات النظام حالياً</span>
+            <span id="recordCount" style="display: block; font-size: 16px; font-weight: 800;">0 عملية محفوظة</span>
+        </div>
+    </div>
+
+    <div class="backup-section">
+        <button class="btn btn-export" onclick="exportFullBackup()">
+            <i class="fas fa-cloud-download-alt"></i>
+            تصدير نسخة احتياطية (.json)
+        </button>
+
+        <button class="btn btn-import" onclick="document.getElementById('fileInput').click()">
+            <i class="fas fa-cloud-upload-alt"></i>
+            استرجاع بيانات من ملف
+        </button>
+        <input type="file" id="fileInput" accept=".json" onchange="importBackup(event)">
+
+        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 10px 0;">
+
+        <button class="btn btn-danger" onclick="clearData()">
+            <i class="fas fa-trash-alt"></i>
+            حذف جميع البيانات نهائياً
+        </button>
+    </div>
+
+    <nav class="nav-dock">
+        <a href="dashboard.html" class="nav-link"><i class="fas fa-home"></i></a>
+        <a href="index.html" class="nav-link"><i class="fas fa-plus-circle"></i></a>
+        <a href="vu.html" class="nav-link"><i class="fas fa-users"></i></a>
+        <a href="report.html" class="nav-link"><i class="fas fa-file-contract"></i></a>
+        <a href="backup.html" class="nav-link active"><i class="fas fa-shield-alt"></i></a>
+    </nav>
+
+    <script>
+        const KEY_CLIENTS = 'nova_clients';
+        const KEY_DAILY = 'nova_daily';
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.style.opacity = '1';
+            setTimeout(() => t.style.opacity = '0', 3000);
+        }
+
+        function updateStatus() {
+            const data = JSON.parse(localStorage.getItem(KEY_CLIENTS) || '[]');
+            document.getElementById('recordCount').innerText = `${data.length} عملية محفوظة`;
+        }
+
+        // 1. تصدير شامل (كل البيانات في ملف واحد)
+        function exportFullBackup() {
+            const backupData = {
+                clients: JSON.parse(localStorage.getItem(KEY_CLIENTS) || '[]'),
+                daily: JSON.parse(localStorage.getItem(KEY_DAILY) || '[]'),
+                exportDate: new Date().toLocaleString()
+            };
+
+            const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `NOVA_FULL_BACKUP_${new Date().toISOString().slice(0,10)}.json`;
+            a.click();
+            showToast("تم تصدير النسخة بنجاح!");
+        }
+
+        // 2. استيراد شامل
+        function importBackup(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    
+                    if (confirm("سيتم استبدال البيانات الحالية بالبيانات المستوردة، هل أنت متأكد؟")) {
+                        if (importedData.clients) localStorage.setItem(KEY_CLIENTS, JSON.stringify(importedData.clients));
+                        if (importedData.daily) localStorage.setItem(KEY_DAILY, JSON.stringify(importedData.daily));
+                        
+                        showToast("تم استرجاع البيانات بنجاح!");
+                        updateStatus();
+                    }
+                } catch (err) {
+                    alert("خطأ: الملف المرفق غير صالح.");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // 3. مسح البيانات
+        function clearData() {
+            if (confirm("تحذير!! سيتم حذف كل بيانات العمليات والتقارير نهائياً. لا يمكن التراجع!")) {
+                localStorage.removeItem(KEY_CLIENTS);
+                localStorage.removeItem(KEY_DAILY);
+                updateStatus();
+                showToast("تم تصفير النظام.");
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', updateStatus);
+    </script>
+</body>
+</html>

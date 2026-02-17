@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NOVA · التحليل الاستراتيجي</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@400;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root {
+            --dark: #0f172a;
+            --primary: #3b82f6;
+            --success: #10b981;
+            --gold: #fbbf24;
+            --bg: #f1f5f9;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Almarai', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg); color: var(--dark); padding: 15px; padding-bottom: 110px; }
+
+        /* الهيدر المطور */
+        .premium-header {
+            background: var(--dark); border-radius: 30px; padding: 25px; color: white;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 15px 35px rgba(15, 23, 42, 0.2); margin-bottom: 25px;
+        }
+        .header-title h1 { font-size: 20px; font-weight: 800; }
+        .header-title p { font-size: 11px; opacity: 0.6; }
+        .export-btn { 
+            background: rgba(255,255,255,0.1); width: 45px; height: 45px; 
+            border-radius: 15px; display: flex; align-items: center; justify-content: center;
+            color: white; border: 1px solid rgba(255,255,255,0.1); transition: 0.3s;
+        }
+        .export-btn:active { transform: scale(0.9); background: var(--primary); }
+
+        /* البطاقات السريعة */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 25px; }
+        .mini-card { background: white; padding: 15px; border-radius: 22px; box-shadow: 0 5px 15px rgba(0,0,0,0.02); }
+        .mini-card .label { font-size: 10px; color: #64748b; font-weight: 800; display: block; margin-bottom: 5px; }
+        .mini-card .val { font-size: 15px; font-weight: 800; color: var(--dark); }
+
+        /* محاكي الذكاء الاصطناعي */
+        .ai-pulse {
+            background: white; border-radius: 25px; padding: 20px; margin-bottom: 25px;
+            border-right: 6px solid var(--primary); display: flex; gap: 15px; align-items: center;
+        }
+        .ai-icon { width: 40px; height: 40px; background: #eff6ff; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--primary); font-size: 20px; }
+
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin: 25px 10px 15px; }
+        .section-header h3 { font-size: 16px; font-weight: 800; }
+
+        /* قائمة الأشهر مع Bar Chart مصغر */
+        .report-box { background: white; border-radius: 30px; padding: 10px; box-shadow: 0 5px 20px rgba(0,0,0,0.02); }
+        .month-item { 
+            padding: 15px; border-bottom: 1px solid #f8fafc; display: flex; 
+            justify-content: space-between; align-items: center; transition: 0.3s;
+        }
+        .month-item:last-child { border: none; }
+        .progress-container { flex: 1; margin: 0 20px; height: 6px; background: #f1f5f9; border-radius: 10px; overflow: hidden; }
+        .progress-bar { height: 100%; background: var(--primary); border-radius: 10px; }
+
+        /* أفضل العملاء */
+        .client-card { 
+            display: flex; align-items: center; gap: 15px; padding: 15px; 
+            background: white; border-radius: 22px; margin-bottom: 10px; 
+            border: 1px solid transparent; transition: 0.3s;
+        }
+        .client-card:nth-child(1) { border-color: var(--gold); background: #fffdf5; }
+        .crown { color: var(--gold); font-size: 18px; }
+
+        /* النافيجيشن */
+        .nav-dock { 
+            position: fixed; bottom: 20px; left: 20px; right: 20px; 
+            background: var(--dark); border-radius: 28px; padding: 15px; 
+            display: flex; justify-content: space-around; z-index: 1000;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+        }
+        .nav-link { color: #475569; text-decoration: none; font-size: 22px; }
+        .nav-link.active { color: #fff; transform: translateY(-5px); }
+
+    </style>
+</head>
+<body>
+
+    <div class="premium-header">
+        <div class="header-title">
+            <p>تقارير الأداء</p>
+            <h1>نوفا ADS الاستراتيجي</h1>
+        </div>
+        <div class="export-btn" onclick="exportData()"><i class="fas fa-file-export"></i></div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="mini-card">
+            <span class="label">إجمالي العمليات</span>
+            <span class="val" id="totalOps">0</span>
+        </div>
+        <div class="mini-card">
+            <span class="label">متوسط الربح</span>
+            <span class="val" id="avgNet">0 دج</span>
+        </div>
+    </div>
+
+    <div class="ai-pulse">
+        <div class="ai-icon"><i class="fas fa-brain"></i></div>
+        <div style="flex:1;">
+            <p style="font-size:10px; color:var(--primary); font-weight:800; margin-bottom:4px;">توصية نوفا الذكية</p>
+            <p id="aiText" style="font-size:12px; font-weight:700; color:#475569;">جاري تحليل أنماط الربح...</p>
+        </div>
+    </div>
+
+    <div class="section-header">
+        <h3>الأداء المالي الشهري</h3>
+        <i class="fas fa-chart-bar" style="color:var(--primary)"></i>
+    </div>
+    <div id="monthlyList" class="report-box"></div>
+
+    <div class="section-header">
+        <h3>نخبة العملاء (الأكثر ربحية)</h3>
+        <i class="fas fa-medal" style="color:var(--gold)"></i>
+    </div>
+    <div id="topClientsList"></div>
+
+    <nav class="nav-dock">
+        <a href="dashboard.html" class="nav-link"><i class="fas fa-home"></i></a>
+        <a href="index.html" class="nav-link"><i class="fas fa-plus-circle"></i></a>
+        <a href="vu.html" class="nav-link"><i class="fas fa-users"></i></a>
+        <a href="ads.html" class="nav-link"><i class="fas fa-coins"></i></a>
+        <a href="report.html" class="nav-link active"><i class="fas fa-file-contract"></i></a>
+    </nav>
+
+    <script>
+        const KEY_CLIENTS = 'nova_clients';
+        const KEY_DAILY = 'nova_daily';
+
+        function fmt(v) { return (v || 0).toLocaleString('ar-DZ') + ' دج'; }
+
+        function loadAdvancedReports() {
+            const clients = JSON.parse(localStorage.getItem(KEY_CLIENTS) || '[]');
+            const daily = JSON.parse(localStorage.getItem(KEY_DAILY) || '[]');
+
+            // 1. إحصائيات سريعة
+            document.getElementById('totalOps').innerText = clients.length;
+            const totalNet = clients.reduce((sum, c) => sum + (c.paid ? (Number(c.netProfitDZD) || 0) : 0), 0);
+            document.getElementById('avgNet').innerText = fmt(clients.length ? Math.round(totalNet / clients.length) : 0);
+
+            // 2. تحليل الأشهر مع شريط التقدم
+            const monthsData = {};
+            daily.forEach(d => {
+                const m = d.date.slice(0, 7);
+                if(!monthsData[m]) monthsData[m] = 0;
+                monthsData[m] += Number(d.netProfitDZD) || 0;
+            });
+
+            const maxProfit = Math.max(...Object.values(monthsData), 1);
+            let monthHtml = '';
+            Object.keys(monthsData).sort().reverse().forEach(m => {
+                const percentage = (monthsData[m] / maxProfit) * 100;
+                monthHtml += `
+                    <div class="month-item">
+                        <div style="width:70px;"><span style="font-size:12px; font-weight:800;">${m}</span></div>
+                        <div class="progress-container">
+                            <div class="progress-bar" style="width:${percentage}%"></div>
+                        </div>
+                        <div style="text-align:left; min-width:80px;"><span style="font-size:13px; font-weight:800; color:var(--primary)">${fmt(monthsData[m])}</span></div>
+                    </div>
+                `;
+            });
+            document.getElementById('monthlyList').innerHTML = monthHtml || '<p style="padding:20px; text-align:center; opacity:0.5;">لا توجد بيانات</p>';
+
+            // 3. تحليل أفضل العملاء (Profit-Based)
+            const clientStats = {};
+            clients.forEach(c => {
+                if(!clientStats[c.pageName]) clientStats[c.pageName] = { name: c.pageName, profit: 0, count: 0 };
+                clientStats[c.pageName].profit += (Number(c.netProfitDZD) || 0);
+                clientStats[c.pageName].count++;
+            });
+
+            const top = Object.values(clientStats).sort((a,b) => b.profit - a.profit).slice(0, 5);
+            document.getElementById('topClientsList').innerHTML = top.map((c, i) => `
+                <div class="client-card">
+                    <div class="crown">${i === 0 ? '<i class="fas fa-crown"></i>' : (i + 1)}</div>
+                    <div style="flex:1;">
+                        <span style="font-size:14px; font-weight:800; display:block;">${c.name}</span>
+                        <span style="font-size:10px; color:#64748b;">${c.count} صفقات ناجحة</span>
+                    </div>
+                    <div style="text-align:left;">
+                        <span style="font-size:14px; font-weight:800; color:var(--success);">${fmt(c.profit)}</span>
+                        <span style="display:block; font-size:9px; font-weight:800; opacity:0.5;">صافي ربح</span>
+                    </div>
+                </div>
+            `).join('') || '<p style="text-align:center; opacity:0.5;">في انتظار أول صفقة...</p>';
+
+            // 4. الذكاء الاصطناعي
+            if(top.length > 0) {
+                const best = top[0];
+                const aiText = `أداء ممتاز! العميل "${best.name}" هو مصدرك الأول للربح. نقترح استهداف صفحات مشابهة له لزيادة العائد بنسبة 20%.`;
+                document.getElementById('aiText').innerText = aiText;
+            }
+        }
+
+        function exportData() {
+            const data = localStorage.getItem(KEY_CLIENTS);
+            const blob = new Blob([data], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Nova_Report_${new Date().toISOString().slice(0,10)}.json`;
+            a.click();
+            alert('تم تجهيز ملف البيانات للتصدير!');
+        }
+
+        document.addEventListener('DOMContentLoaded', loadAdvancedReports);
+    </script>
+</body>
+</html>

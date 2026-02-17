@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NOVA ADS · فاتورة رقمية</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.json">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@400;700;800&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        :root {
+            --nova-dark: #0f172a;
+            --accent: #3b82f6;
+            --bg: #f1f5f9;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Almarai', sans-serif; }
+        body { background: var(--bg); padding: 20px; padding-bottom: 50px; }
+
+        .invoice-card {
+            background: white;
+            border-radius: 35px;
+            padding: 35px 25px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid #fff;
+        }
+
+        /* شريط علوي جمالي */
+        .invoice-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 8px;
+            background: linear-gradient(90deg, var(--accent), #60a5fa);
+        }
+
+        .header-invoice {
+            display: flex; align-items: center; gap: 15px;
+            border-bottom: 2px dashed #e2e8f0;
+            padding-bottom: 25px; margin-bottom: 25px;
+        }
+
+        .logo-small {
+            width: 65px; height: 65px; background: var(--nova-dark);
+            border-radius: 18px; padding: 10px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .logo-small img { width: 100%; height: 100%; object-fit: contain; }
+
+        .company-info h2 { font-size: 20px; font-weight: 800; color: var(--nova-dark); }
+        .company-info p { font-size: 12px; color: #64748b; }
+
+        .invoice-title { font-size: 24px; font-weight: 800; color: var(--nova-dark); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+
+        .info-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+        .row { 
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 0; border-bottom: 1px solid #f1f5f9;
+        }
+        .label { font-size: 13px; color: #64748b; font-weight: 700; }
+        .value { font-size: 14px; font-weight: 800; color: var(--nova-dark); }
+
+        .total-section {
+            background: var(--nova-dark);
+            border-radius: 25px; padding: 25px; margin-top: 30px;
+            color: white; display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 10px 20px rgba(15, 23, 42, 0.2);
+        }
+        .total-section span { font-size: 14px; opacity: 0.8; }
+        .total-section .amount { font-size: 26px; font-weight: 800; color: #38bdf8; opacity: 1; }
+
+        .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 30px; }
+        .btn {
+            border: none; border-radius: 20px; padding: 18px;
+            font-size: 15px; font-weight: 800; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            transition: 0.3s;
+        }
+        .btn-share { background: var(--accent); color: white; }
+        .btn-back { background: white; color: var(--nova-dark); border: 2px solid #e2e8f0; text-decoration: none; }
+        
+        /* إخفاء الأزرار عند الطباعة */
+        @media print { .actions, .btn-print, .back-link { display: none; } body { padding: 0; } .invoice-card { box-shadow: none; border: none; } }
+    </style>
+</head>
+<body>
+
+    <div id="invoiceToCapture" class="invoice-card">
+        <div id="invoiceContent">
+            </div>
+        
+        <div style="margin-top: 25px; text-align: center; font-size: 10px; color: #94a3b8;">
+            <p>هذه فاتورة إلكترونية صادرة عن نظام NOVA ADS لإدارة الإعلانات</p>
+            <p id="invoiceTimestamp"></p>
+        </div>
+    </div>
+
+    <div class="actions">
+        <button class="btn btn-share" onclick="shareInvoice()">
+            <i class="fas fa-share-alt"></i> مشاركة
+        </button>
+        <a href="vu.html" class="btn btn-back">
+            <i class="fas fa-arrow-left"></i> رجوع
+        </a>
+    </div>
+
+    <script>
+        const STORAGE_CLIENTS = 'nova_clients';
+        
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+
+        function formatNumber(v) {
+            return (Number(v) || 0).toLocaleString('ar-DZ') + ' دج';
+        }
+
+        (function() {
+            const clientId = sessionStorage.getItem('invoiceClientId');
+            if (!clientId) { window.location.href = 'vu.html'; return; }
+
+            const clients = JSON.parse(localStorage.getItem(STORAGE_CLIENTS) || '[]');
+            const client = clients.find(c => c.id === clientId);
+            if (!client) { window.location.href = 'vu.html'; return; }
+
+            document.getElementById('invoiceTimestamp').innerText = "صدرت في: " + new Date().toLocaleString('ar-DZ');
+
+            const html = `
+                <div class="header-invoice">
+                    <div class="logo-small"><img src="img/logo.png" alt="NOVA"></div>
+                    <div class="company-info">
+                        <h2>NOVA ADS</h2>
+                        <p>إدارة وتسويق المحتوى الرقمي</p>
+                    </div>
+                </div>
+                
+                <div class="invoice-title">
+                    <i class="fas fa-file-invoice-dollar" style="color:var(--accent)"></i>
+                    فاتورة رقم ${client.trackingNumber}
+                </div>
+
+                <div class="info-grid">
+                    <div class="row"><span class="label">تاريخ العملية:</span><span class="value">${client.date}</span></div>
+                    <div class="row"><span class="label">العميل (الصفحة):</span><span class="value">${client.pageName}</span></div>
+                    ${client.phone ? `<div class="row"><span class="label">رقم التواصل:</span><span class="value">${client.phone}</span></div>` : ''}
+                    <div class="row"><span class="label">سعر الصرف المعتمد:</span><span class="value">${client.dollarRate} دج</span></div>
+                    <div class="row"><span class="label">إجمالي المبيعات:</span><span class="value">${formatNumber(client.amountPaidDZD)}</span></div>
+                    <div class="row"><span class="label">مصاريف الخدمة:</span><span class="value">$${client.serviceExpenseUSD}</span></div>
+                    ${client.notes ? `<div class="row"><span class="label">ملاحظات إضافية:</span><span class="value">${client.notes}</span></div>` : ''}
+                </div>
+
+                <div class="total-section">
+                    <div>
+                        <span>المبلغ الصافي</span>
+                        <div class="amount">${formatNumber(client.netProfitDZD)}</div>
+                    </div>
+                    <i class="fas fa-check-circle" style="font-size: 30px; color: #10b981;"></i>
+                </div>
+            `;
+            document.getElementById('invoiceContent').innerHTML = html;
+        })();
+
+        // وظيفة المشاركة الذكية
+        async function shareInvoice() {
+            const card = document.getElementById('invoiceToCapture');
+            const canvas = await html2canvas(card, { scale: 2, backgroundColor: '#f1f5f9' });
+            
+            canvas.toBlob(async (blob) => {
+                const file = new File([blob], 'Nova_Invoice.png', { type: 'image/png' });
+                if (navigator.share) {
+                    try {
+                        await navigator.share({
+                            files: [file],
+                            title: 'فاتورة Nova Ads',
+                            text: 'شكراً لثقتكم في خدماتنا.'
+                        });
+                    } catch (err) { console.error("Error sharing:", err); }
+                } else {
+                    // تحميل الصورة إذا كان المتصفح لا يدعم المشاركة
+                    const link = document.createElement('a');
+                    link.download = 'Invoice.png';
+                    link.href = canvas.toDataURL();
+                    link.click();
+                }
+            });
+        }
+    </script>
+</body>
+</html>
